@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Scene</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="1000" height="500"></canvas>
+    <script type="module">
+      import * as THREE from "three";
+      import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+      import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+      function main() {
+        const canvas = document.querySelector("#c");
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+        const fov = 75;
+        const aspect = 2;
+        const near = 0.1;
+        const far = 100;
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.z = 5;
+
+        const scene = new THREE.Scene();
+
+        //load goldfish 3d model
+        const mtlLoader = new MTLLoader();
+        mtlLoader.load("Goldfish_01.mtl", (materials) => {
+          materials.preload();
+          const objLoader = new OBJLoader();
+          objLoader.setMaterials(materials);
+          objLoader.load("Goldfish_01.obj", (object) => {
+            object.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                const goldfishMaterial = new THREE.MeshPhongMaterial({
+                  color: 0xffd700, //gold color
+                });
+                child.material = goldfishMaterial;
+              }
+            });
+            scene.add(object);
+          });
+        });
+
+        const boxWidth = 3;
+        const boxHeight = 3;
+        const boxDepth = 3;
+        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+        // Load Textures
+        const loader = new THREE.TextureLoader();
+        const texture = loader.load("wall.jpg");
+
+        // Apply Texture to Material
+        const material = new THREE.MeshPhongMaterial({ map: texture });
+
+        // Create Cubes with Textured Material
+        function makeInstance(geometry, material, x) {
+          const cube = new THREE.Mesh(geometry, material);
+          scene.add(cube);
+          cube.position.x = x;
+          return cube;
+        }
+
+        const cubes = [makeInstance(geometry, material, -5)];
+
+        //sphere
+        const sphere_geo = new THREE.SphereGeometry(1, 30, 30);
+        const smaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 }); //green
+        const sphere = new THREE.Mesh(sphere_geo, smaterial);
+        scene.add(sphere);
+        sphere.position.x = 0;
+        sphere.position.y = -2;
+
+        //cylinder
+        const cylinder_geo = new THREE.CylinderGeometry(0.5, 0.5, 3, 40);
+        const cmaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff }); //blue
+        const cylinder = new THREE.Mesh(cylinder_geo, cmaterial);
+        scene.add(cylinder);
+        cylinder.position.x = 5;
+
+        const color = 0xffffff;
+        const intensity = 3;
+        const light = new THREE.DirectionalLight(color, intensity);
+        light.position.set(0, 0, 10);
+        scene.add(light);
+
+        // Render Loop
+        function render(time) {
+          time *= 0.001;
+          cubes.forEach((cube, ndx) => {
+            const speed = 1 + ndx * 0.1;
+            const rot = time * speed;
+            cube.rotation.x = rot;
+            cube.rotation.y = rot;
+          });
+          renderer.render(scene, camera);
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+
+        //camera controls
+        const cam = new OrbitControls(camera, canvas);
+        cam.damping = true;
+        cam.dampFactor = 0.5;
+        cam.zoom = true;
+      }
+
+      main();
+    </script>
+  </body>
+</html>
