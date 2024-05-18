@@ -84,7 +84,7 @@
           scene.add(foliage);
         }
 
-        // Create a few houses and trees
+        // village houses and trees
         createHouse(-10, -5);
         createHouse(-5, -5);
         createHouse(0, -5);
@@ -113,21 +113,23 @@
         createTree(-20, -5);
         createTree(20, -5);
 
-        // Lighting
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
-        directionalLight.position.set(0, 10, 10);
-        scene.add(directionalLight);
+        // ambient Lighting
+        const amb_color = 0x808080;
+        const amb_intensity = 1;
+        const amb_light = new THREE.Ambientlight(amb_color, amb_intensity);
+        scene.add(amb_light);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-        scene.add(ambientLight);
-
-        const hemisphereLight = new THREE.HemisphereLight(
-          0xb1e1ff,
-          0xb97a20,
-          2
+        // Hemisphere Light
+        const sky_color = 0x800080;
+        const ground_color = 0xff0000;
+        const hem_intensitys = 3;
+        const hem_light = new THREE.HemisphereLight(
+          sky_color,
+          ground_color,
+          hem_intensity
         );
-        hemisphereLight.position.set(0, 5, 0);
-        scene.add(hemisphereLight);
+        hem_light.position.set(0, 2, 0);
+        scene.add(hem_light);
 
         // Skybox
         const skyLoader = new THREE.CubeTextureLoader();
