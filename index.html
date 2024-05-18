@@ -114,9 +114,9 @@
         createTree(20, -5);
 
         // ambient Lighting
-        const amb_color = 0x808080;
+        const amb_color = 0xffffff;
         const amb_intensity = 1;
-        const amb_light = new THREE.Ambientlight(amb_color, amb_intensity);
+        const amb_light = new THREE.AmbientLight(amb_color, amb_intensity);
         scene.add(amb_light);
 
         // Hemisphere Light
