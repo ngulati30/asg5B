@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Three.js Scene</title>
+    <title>ASG 5C</title>
     <style>
       body {
         margin: 0;
+        overflow: hidden;
       }
       canvas {
         display: block;
@@ -14,6 +15,14 @@
     </style>
   </head>
   <body>
+    <div id="about">
+      <h2>About this Work</h2>
+      <p>
+        Welcome to this small village! Explore the village in the rain with its
+        houses, and trees! Looks like there may be some "out of this world"
+        visitors today! Use the arrow keys or WASD to move around.
+      </p>
+    </div>
     <canvas id="c" width="1000" height="500"></canvas>
     <script type="module">
       import * as THREE from "three";
@@ -23,11 +32,11 @@
         const canvas = document.querySelector("#c");
         const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
         const fov = 75;
-        const aspect = 2; // the canvas default
+        const aspect = canvas.clientWidth / canvas.clientHeight;
         const near = 0.1;
-        const far = 100;
+        const far = 200; // Increased far value
         const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-        camera.position.set(0, 10, 20);
+        camera.position.set(0, 10, 30);
 
         const scene = new THREE.Scene();
 
@@ -84,7 +93,7 @@
           scene.add(foliage);
         }
 
-        // village houses and trees
+        // Village houses and trees
         createHouse(-10, -5);
         createHouse(-5, -5);
         createHouse(0, -5);
@@ -113,23 +122,80 @@
         createTree(-20, -5);
         createTree(20, -5);
 
-        // ambient Lighting
-        const amb_color = 0xffffff;
-        const amb_intensity = 1;
-        const amb_light = new THREE.AmbientLight(amb_color, amb_intensity);
-        scene.add(amb_light);
+        // Create UFO
+        function createUFO() {
+          // UFO body
+          const bodyGeometry = new THREE.CylinderGeometry(3, 3, 1, 32);
+          const bodyMaterial = new THREE.MeshPhongMaterial({
+            color: 0x808080,
+          });
+          const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+          body.position.set(0, 15, 0);
+          scene.add(body);
+
+          // UFO dome
+          const domeGeometry = new THREE.SphereGeometry(
+            2,
+            32,
+            32,
+            0,
+            Math.PI,
+            0,
+            Math.PI
+          );
+          const domeMaterial = new THREE.MeshPhongMaterial({
+            color: 0xcccccc,
+            opacity: 0.8,
+            transparent: true,
+          });
+          const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+          dome.position.set(0, 15.5, 0); // Adjusted the position of the dome
+          scene.add(dome);
+        }
+
+        createUFO();
+
+        // Create rain effect
+        const rainCount = 15000;
+        const rainGeometry = new THREE.BufferGeometry();
+        const rainPositions = new Float32Array(rainCount * 3);
+        const rainVelocities = new Float32Array(rainCount);
+
+        for (let i = 0; i < rainCount; i++) {
+          rainPositions[i * 3] = Math.random() * 100 - 50;
+          rainPositions[i * 3 + 1] = Math.random() * 50;
+          rainPositions[i * 3 + 2] = Math.random() * 100 - 50;
+          rainVelocities[i] = Math.random() * 0.1 + 0.05;
+        }
+
+        rainGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(rainPositions, 3)
+        );
+        const rainMaterial = new THREE.PointsMaterial({
+          color: 0xaaaaaa,
+          size: 0.1,
+        });
+        const rain = new THREE.Points(rainGeometry, rainMaterial);
+        scene.add(rain);
+
+        // Ambient Lighting
+        const ambColor = 0xffffff;
+        const ambIntensity = 1;
+        const ambLight = new THREE.AmbientLight(ambColor, ambIntensity);
+        scene.add(ambLight);
 
         // Hemisphere Light
-        const sky_color = 0x800080;
-        const ground_color = 0xff0000;
-        const hem_intensity = 3;
-        const hem_light = new THREE.HemisphereLight(
-          sky_color,
-          ground_color,
-          hem_intensity
+        const skyColor = 0x800080;
+        const groundColor = 0xff0000;
+        const hemIntensity = 3;
+        const hemLight = new THREE.HemisphereLight(
+          skyColor,
+          groundColor,
+          hemIntensity
         );
-        hem_light.position.set(0, 2, 0);
-        scene.add(hem_light);
+        hemLight.position.set(0, 2, 0);
+        scene.add(hemLight);
 
         // Skybox
         const skyLoader = new THREE.CubeTextureLoader();
@@ -146,6 +212,19 @@
         // Render loop
         function render(time) {
           time *= 0.001; // convert time to seconds
+
+          // Update rain positions
+          const rainPos = rain.geometry.attributes.position.array;
+          for (let i = 0; i < rainCount; i++) {
+            rainPos[i * 3 + 1] -= rainVelocities[i];
+            if (rainPos[i * 3 + 1] < 0) {
+              rainPos[i * 3 + 1] = Math.random() * 50;
+              rainPos[i * 3] = Math.random() * 100 - 50;
+              rainPos[i * 3 + 2] = Math.random() * 100 - 50;
+            }
+          }
+          rain.geometry.attributes.position.needsUpdate = true;
+
           renderer.render(scene, camera);
           requestAnimationFrame(render);
         }
@@ -156,6 +235,39 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
         controls.enableZoom = true;
+
+        // Keyboard controls
+        const moveSpeed = 0.5;
+        const keyState = {};
+        window.addEventListener("keydown", (e) => {
+          keyState[e.key] = true;
+        });
+        window.addEventListener("keyup", (e) => {
+          keyState[e.key] = false;
+        });
+
+        function updateCameraPosition() {
+          if (keyState["ArrowUp"] || keyState["w"]) {
+            camera.position.z -= moveSpeed;
+          }
+          if (keyState["ArrowDown"] || keyState["s"]) {
+            camera.position.z += moveSpeed;
+          }
+          if (keyState["ArrowLeft"] || keyState["a"]) {
+            camera.position.x -= moveSpeed;
+          }
+          if (keyState["ArrowRight"] || keyState["d"]) {
+            camera.position.x += moveSpeed;
+          }
+          controls.update();
+        }
+
+        function animate() {
+          updateCameraPosition();
+          renderer.render(scene, camera);
+          requestAnimationFrame(animate);
+        }
+        animate();
       }
 
       main();
